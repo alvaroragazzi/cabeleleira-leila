@@ -1,0 +1,45 @@
+{
+    "name": "backend",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.ts",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "del /S /q dist\\* && tsc",
+        "dev": "nodemon -L --watch src --ext ts,json --exec ts-node src/index.ts",
+        "db:migrate": "npx knex migrate:latest",
+        "db:migrate:make": "npx knex migrate:make",
+        "db:migrate:rollback": "npx knex migrate:rollback",
+        "db:migrate:fresh": "npx knex migrate:rollback --all && npx knex migrate:latest",
+        "db:seed": "npx knex -- seed:run",
+        "db:seed:fresh": "npx knex -- seed:rollback && npx knex -- seed:run",
+        "db:seed:make": "npx knex -- seed:make",
+        "db:migrate:seed:fresh": "npm run db:migrate:fresh && npm run db:seed"
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/bcrypt": "^5.0.2",
+        "@types/cookie-parser": "^1.4.9",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.3",
+        "@types/multer": "^2.1.0",
+        "@types/node": "^24.0.3",
+        "@types/pg": "^8.20.0",
+        "nodemon": "^3.1.10",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.8.3"
+    },
+    "dependencies": {
+        "argon2": "^0.44.0",
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.6",
+        "dayjs": "^1.11.21",
+        "dotenv": "^16.5.0",
+        "express": "^5.1.0",
+        "knex": "^3.2.9",
+        "multer": "^2.2.0",
+        "pg": "^8.16.1",
+        "pg-hstore": "^2.3.4"
+    }
+}

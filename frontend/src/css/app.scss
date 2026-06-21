@@ -1,0 +1,85 @@
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* =========================
+   VARIÁVEIS (TEMA)
+========================= */
+:root {
+  --font-size: 16px;
+
+  --background: #f8f8f8;
+  --foreground: #1a1a1a;
+
+  --primary: #2563eb;
+  --primary-foreground: #f8f8f8;
+
+  --secondary: #f3f4f6;
+  --secondary-foreground: #1a1a1a;
+
+  --accent: #e5e7eb;
+  --accent-foreground: #1a1a1a;
+
+  --border: #e5e7eb;
+  --input-background: #f9fafb;
+
+  --radius: 8px;
+}
+
+/* =========================
+   DARK MODE
+========================= */
+.dark {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+
+  --primary: #3b82f6;
+  --primary-foreground: #f8f8f8;
+
+  --secondary: #1e293b;
+  --secondary-foreground: #f1f5f9;
+
+  --accent: #334155;
+  --accent-foreground: #f1f5f9;
+
+  --border: #334155;
+  --input-background: #1e293b;
+}
+
+/* =========================
+   BASE GLOBAL
+========================= */
+
+body {
+    min-width: 100px;
+    min-height: 100%;
+
+    font-family: "Inter", "Roboto", "-apple-system", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+    -ms-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    line-height: 1.5;
+    font-size: inherit;
+
+    background: var(--background);
+    color: var(--foreground);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
