@@ -26,6 +26,10 @@ Vou apontar o que ainda pode ser melhorado nessa sistema (não houve tempo para 
 - Indicadores mais completos e com filtros de data
 - Mais opções de customização do cliente (Alterar foto, nome, telefone e e-mail)
 
+
+## Prints do sistema estão na pasta prints_e_video_sistema
+Vídeo mostrando o sistema: [[Git](https://youtu.be/7VKvbG3iGNk)]([https://git-scm.com/](https://youtu.be/7VKvbG3iGNk))
+
 ## Requisitos
 
 Antes de começar, você precisa ter instalado na máquina:
