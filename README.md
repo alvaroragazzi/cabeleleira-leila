@@ -28,7 +28,7 @@ Vou apontar o que ainda pode ser melhorado nessa sistema (não houve tempo para 
 
 
 ## Prints do sistema estão na pasta prints_e_video_sistema
-Vídeo mostrando o sistema: [[Git](https://youtu.be/7VKvbG3iGNk)]([https://git-scm.com/](https://youtu.be/7VKvbG3iGNk))
+Vídeo mostrando o sistema: [https://youtu.be/7VKvbG3iGNk](https://youtu.be/7VKvbG3iGNk)
 
 ## Requisitos
 
