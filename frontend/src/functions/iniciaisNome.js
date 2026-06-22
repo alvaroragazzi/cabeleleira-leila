@@ -1,0 +1,16 @@
+export default function iniciaisNome(nome) {
+    if (!nome || typeof nome !== "string") return "";
+
+    const partes = nome
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+
+    if (partes.length === 0) return "";
+
+    if (partes.length === 1) {
+        return partes[0][0].toUpperCase();
+    }
+
+    return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+}

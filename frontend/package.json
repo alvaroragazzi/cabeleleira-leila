@@ -1,8 +1,8 @@
 {
   "name": "frontend",
   "version": "0.0.1",
-  "description": "Frontend",
-  "productName": "Frontend",
+  "description": "Leila Salão de Beleza",
+  "productName": "Leila Salão de Beleza",
   "author": "any",
   "private": true,
   "scripts": {

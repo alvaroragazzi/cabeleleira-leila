@@ -64,6 +64,48 @@ export default class AgendamentosController {
         return res.status(201).send();
     }
 
+    public static async agendamentoCliente(req: Request, res: Response): Promise<any> {
+        const dados = await req.validate({
+            id_usuario: "required|integer",
+            dh_agendamento: "required|date",
+            id_servicos: "required|array",
+                "id_servicos.*": "integer",
+        });
+
+        const id_cliente = req.session.id_cliente;
+
+        const temAgendamento = await Agendamentos.query()
+            .where("id_usuario", "=", id_cliente)
+            .where("dh_agendamento", dados.dh_agendamento)
+            .first();
+
+        // se outro cliente agendar antes, o cliente atual não poderá agendar no mesmo horário
+        if (temAgendamento) {
+            return res.status(400).send({ message: "Já existe um agendamento neste horário" });
+        }
+            
+        await DB.connection().transaction(async (trx) => {
+            const agendamento = await Agendamentos.create({
+                id_usuario: dados.id_usuario,
+                id_cliente,
+                dh_agendamento: dados.dh_agendamento,
+            }, trx);
+
+            for (const id_servico of dados.id_servicos) {
+                const servico = await Servicos.findOrFail(id_servico, trx);
+
+                await AgendamentoServicos.create({
+                    id_agendamento: agendamento.getAttribute("id"),
+                    id_servico,
+                    nm_servico: servico.getAttribute("nm_servico"),
+                    vl_preco: servico.getAttribute("vl_preco"),
+                }, trx);
+            }
+        });
+
+        return res.send();
+    }
+
     public static async update(req: Request, res: Response): Promise<any> {
         const dados = await req.validate({
             tf_confirmado: "nullable|boolean",
@@ -74,5 +116,23 @@ export default class AgendamentosController {
         await agendamento.update(dados);
 
         return res.send();
+    }
+
+    public static async delete(req: Request, res: Response): Promise<any> {
+        const agendamento = await Agendamentos.findOrFail(req.params.id);
+        
+        await agendamento.delete();
+        
+        return res.send();
+    }
+
+    public static async agendamentosCliente(req: Request, res: Response): Promise<any> {
+        const agendamentos = await Agendamentos.query()
+            .where("id_cliente", "=", req.session.id_cliente)
+            .with("agendamentoServicos.servico", "usuario")
+            .orderBy("dh_agendamento", "desc")
+            .get();
+            
+        return res.send(agendamentos);
     }
 }

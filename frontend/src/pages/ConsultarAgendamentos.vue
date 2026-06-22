@@ -311,7 +311,7 @@
 import { onMounted, ref } from "vue";
 import moment from "moment";
 import { useQuasar } from "quasar";
-import { api } from "src/boot/axios";
+import { api } from "boot/axios";
 
 const $q = useQuasar();
 const filtros = ref({ dt_referencia: moment().format("YYYY/MM/DD") });

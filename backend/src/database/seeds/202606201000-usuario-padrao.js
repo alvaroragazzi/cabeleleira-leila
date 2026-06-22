@@ -16,6 +16,7 @@ exports.seed = async function (knex) {
         { 
             nm_usuario: "Leila",
             ds_senha: senha,
+            ds_caminho_imagem: "usuarios_imgs/leila.png",
             tf_ativo: true,
         }
     ]);

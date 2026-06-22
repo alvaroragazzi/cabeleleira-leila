@@ -16,6 +16,7 @@ if (!process.env.APP_KEY) {
 }
 
 import express, { Request, Response, NextFunction } from "express";
+import session from "express-session";
 
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -47,6 +48,18 @@ app.use(cors({
     credentials: true,
     optionsSuccessStatus: 200,
 }));
+
+app.use(session({
+    secret: process.env.APP_KEY,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+        maxAge: 60 * 1000 * 60 * 24 * 1, // 1 dia
+        httpOnly: true,
+        secure: process.env.APP_ENV === "production",
+    }
+}));
+
 app.use(cookieParser());
 app.use(useMiddleware(AuthHandlerMiddleware));
 app.use(express.urlencoded({ extended: true }));

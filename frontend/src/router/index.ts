@@ -8,6 +8,8 @@ import {
 
 import routes from './routes';
 
+import { LocalStorage } from "quasar";
+
 import { api } from "boot/axios";
 
 export default route(function (/* { store, ssrContext } */) {
@@ -20,17 +22,29 @@ export default route(function (/* { store, ssrContext } */) {
     });
 
     Router.beforeEach(async(to, from, next) => {
-        /*
-        if (to.meta.requiresAuth) {
+        if (to.meta.validaLoginUsuario) {
             try {
-                await api.get("/auth/isAuth");
+                const res = await api.get("/auth/isUsuarioLogado");
+
+                LocalStorage.set("dadosUsuario", res.data);
 
                 next()
             } catch (error) {
                 return next("/login");
             }
         }
-            */
+
+        if (to.meta.validaLoginCliente) {
+            try {
+                const res = await api.get("/auth/isClienteLogado");
+
+                LocalStorage.set("dadosCliente", res.data);
+
+                next()
+            } catch (error) {
+                return next("/areaCliente/login");
+            }
+        }
 
         next();
     });

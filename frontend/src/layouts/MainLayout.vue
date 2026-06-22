@@ -12,7 +12,7 @@
                 />
 
                 <q-toolbar-title>
-                    Cabeleleira Leila
+                    <q-img width="50px" :src="logoLeila"/>
                 </q-toolbar-title>
             </q-toolbar>
         </q-header>
@@ -33,18 +33,29 @@
                 <div class="drawer-header">
                     <div class="drawer-avatar-box">
                         <q-avatar size="40px" color="primary" text-color="white">
-                        A
+                            <div
+                                v-if="!dadosUsuario?.imagem"
+                            >
+                                {{ iniciaisNome(dadosUsuario?.nm_usuario) }}
+                            </div>
+
+                            <q-img
+                                v-else
+                                :src="dadosUsuario?.imagem"
+                                :alt="dadosUsuario?.nm_usuario"
+                                fit="cover"
+                            />
                         </q-avatar>
                     </div>
 
                     <div class="drawer-brand">
-                        <div class="brand-title">Admin Panel</div>
-                        <div class="brand-subtitle">Dashboard</div>
+                        <div class="brand-title">{{ dadosUsuario?.nm_usuario }}</div>
+                        <div class="brand-subtitle">{{ activeItem }}</div>
                     </div>
 
                     <q-space/>
 
-                    <g-btn class="drawer-brand" dense flat icon="LogOut"/>
+                    <g-btn class="drawer-brand" dense flat icon="LogOut" @click="logout"/>
                 </div>
 
                 <q-separator/>
@@ -93,11 +104,22 @@
 </template>
 
 <script setup>
-import { ref } from "vue"
+import { ref } from "vue";
+import { useQuasar } from "quasar";
+import { api } from "boot/axios";
+import { useRouter } from "vue-router";
 
-const drawerOpen = ref(true)
-const miniState = ref(true)
-const activeItem = ref('Dashboard')
+import logoLeila from "assets/logo_leila.svg";
+
+import iniciaisNome from "src/functions/iniciaisNome";
+
+const $q = useQuasar();
+const $router = useRouter();
+
+const dadosUsuario = $q.localStorage.getItem("dadosUsuario");
+const drawerOpen = ref(true);
+const miniState = ref(true);
+const activeItem = ref("Agendas");
 
 const menuItems = [
     {
@@ -111,6 +133,11 @@ const menuItems = [
         to: "/servicos",
     },
     {
+        label: "Indicadores",
+        icon: "ChartNoAxesCombined",
+        to: "/indicadores",
+    },
+    {
         label: "Usuários",
         icon: "Users",
         to: "/usuarios",
@@ -120,7 +147,17 @@ const menuItems = [
         icon: "UserStar",
         to: "/clientes",
     },
-]
+];
+
+const logout = () => {
+    $q.localStorage.removeItem("dadosUsuario");
+    
+    $q.loading.show();
+
+    api.post("/auth/logoutUsuario").then(() => {
+        $router.push("/login");
+    }).finally(() => $q.loading.hide());
+}
 </script>
 
 <style scoped>
@@ -146,8 +183,6 @@ const menuItems = [
 
     overflow: hidden;
     z-index: 10;
-
-    border-right: 1px solid rgba(0, 0, 0, 0.12);
 
     transition:
         width 0.22s ease,

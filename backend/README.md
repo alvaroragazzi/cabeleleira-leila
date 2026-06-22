@@ -2,56 +2,56 @@
 
 ## Instalar dependências
 ```sh
-npm install
+docker exec -i backend_leila npm install
 ```
 
 ## Clonar .env.example
 ```sh
-copy .env.example .env
+docker exec -i backend_leila copy .env.example .env
 ```
 
 ## Criar arquivo de migration
 ```sh
-npm run db:migrate:make create-nome-da-sua-tabela
+docker exec -i backend_leila npm run db:migrate:make create-nome-da-sua-tabela
 ```
 
 ## Rodar migrations
 ```sh
-npm run db:migrate
+docker exec -i backend_leila npm run db:migrate
 ```
 
 ## Apagar as migrations e rodar novamente
 ```sh
-npm run db:migrate:fresh
+docker exec -i backend_leila npm run db:migrate:fresh
 ```
 
 ## Criar arquivo de seed
 ```sh
-npm run db:seed:make nome
+docker exec -i backend_leila npm run db:seed:make nome
 ```
 
 ## Rodar seeds
 ```sh
-npm run db:seed
+docker exec -i backend_leila npm run db:seed
 ```
 
 ## Rodar migrations e seeds
 ```sh
-npm run db:migrate
-npm run db:seed
+docker exec -i backend_leila npm run db:migrate
+docker exec -i backend_leila npm run db:seed
 ```
 
 ## Apagar migrations e seeds e rodar novamente
 ```sh
-npm run db:migrate:seed:fresh
+docker exec -i backend_leila npm run db:migrate:seed:fresh
 ```
 
 ## Rodar o projeto
 ```sh
-npm run dev
+docker exec -i backend_leila npm run dev
 ```
 
 ## Compilar o projeto para produção
 ```sh
-npm run build
+docker exec -i backend_leila npm run build 
 ```

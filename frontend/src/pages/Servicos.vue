@@ -1,10 +1,13 @@
 <template>
-    <q-card flat bordered style="border-radius: 20px; border-left: 4px solid var(--primary);" class="q-mb-md">
-        <q-card-section>
-            <div class="text-h6">Serviços</div>
-            <div class="text-subtitle2">Gerencie os serviços oferecidos pelo salão</div>
-        </q-card-section>
-    </q-card>
+    <div class="row items-start justify-between q-col-gutter-lg q-mb-lg">
+        <div class="col-12 col-md">
+            <div class="text-overline text-primary text-weight-medium">Painel gerencial</div>
+            <div class="text-h4 text-weight-bold q-mt-xs">Serviços</div>
+            <div class="text-body2 text-grey-7 q-mt-sm indicadores-page__subtitle">
+                Cadastre e gerencie os serviços oferecidos no salão, incluindo preço, duração e imagem de referência.
+            </div>
+        </div>
+    </div>
 
     <g-btn
         icon="Plus"

@@ -51,6 +51,7 @@
                                 color="primary"
                                 class="q-mt-sm"
                                 icon="Edit"
+                                @click="abrirModalHorarioTrabalho"
                             />
                         </div>
                     </div>
@@ -66,19 +67,6 @@
                         <div class="col items-center row">
                             <g-icon name="Clock" size="22px" class="q-mr-xs" />
                             Horários - {{ dayjs(dataSelecionada).format("DD/MM/YYYY") }}
-                        </div>
-
-                        <div class="justify-end q-gutter-sm row q-ml-auto" v-if="horariosDisponiveis.length > 0">
-                            <q-btn
-                                color="teal-4"
-                                label="Buscar Proximo dia com Horário Livre"
-                                class="botoes-btn"
-                                no-caps
-                                unelevated
-                                dense
-                                icon="sym_o_search"
-                                @click="incluirAgendamento(null, true)"
-                            />
                         </div>
                     </div>
 
@@ -191,9 +179,9 @@
 
                                             <div class="row" v-if="horario.ocupado">
                                                 <q-badge 
-                                                    :color="horario.tf_confirmado ? 'green-13' : 'red-11'"
+                                                    :color="horario.agendamento.tf_confirmado ? 'green-13' : 'red-11'"
                                                     class="text-weight-bold q-mr-md">
-                                                    {{ horario.tf_confirmado ? 'CONFIRMADO' : 'SEM CONFIRMAÇÃO' }}
+                                                    {{ horario.agendamento.tf_confirmado ? 'CONFIRMADO' : 'SEM CONFIRMAÇÃO' }}
                                                     
                                                 </q-badge>
                                             </div>
@@ -213,7 +201,7 @@
                                             />
 
                                             <g-btn
-                                                v-if="horario.ocupado && !horario.tf_confirmado"
+                                                v-if="horario.ocupado && !horario.agendamento.tf_confirmado"
                                                 class="botoes-btn col full-width"
                                                 color="teal-4"
                                                 label="Confirmar"
@@ -245,7 +233,7 @@
                                                 unelevated
                                                 dense
                                                 icon="X"
-                                                @click="cancelarAgendamento(horario)"
+                                                @click="cancelarAgendamento(horario.agendamento.id)"
                                             />
                                         </div>
                                     </div>
@@ -267,6 +255,7 @@ import { api } from "boot/axios";
 
 import SelectUsuario from "components/Selects/SelectUsuario.vue";
 import ModalAgendamento from "components/Agendas/ModalAgendamento.vue";
+import ModalHorarioTrabalho from "components/Agendas/ModalHorarioTrabalho.vue";
 
 const $q = useQuasar();
 
@@ -314,6 +303,15 @@ const getHorariosDisponiveis = () => {
     });
 };
 
+const abrirModalHorarioTrabalho = () => {
+    $q.dialog({
+        component: ModalHorarioTrabalho,
+        componentProps: {
+            idUsuario: usuarioSelecionado.value,
+        },
+    }).onOk(() => getDiasDisponiveis());
+};
+
 const onNavegacaoCalendario = (navegacao) => {
     mesAnoSelecionado.value = `${navegacao.year}-${String(navegacao.month).padStart(2, "0")}`;
 
@@ -344,6 +342,28 @@ const confirmarAgendamento = (id_agendamento) => {
                 $q.notify({
                     type: "positive",
                     message: "Agendamento confirmado com sucesso!",
+                });
+
+                getHorariosDisponiveis();
+            })
+            .finally(() => $q.loading.hide());
+    });
+}
+
+const cancelarAgendamento = (id_agendamento) => {
+    $q.dialog({
+        title: "Cancelar agendamento",
+        message: "Deseja realmente cancelar este agendamento?",
+        cancel: true,
+        persistent: true,
+    }).onOk(() => {
+        $q.loading.show();
+
+        api.delete(`/agendamentos/${id_agendamento}`)
+            .then(() => {
+                $q.notify({
+                    type: "positive",
+                    message: "Agendamento cancelado com sucesso!",
                 });
 
                 getHorariosDisponiveis();

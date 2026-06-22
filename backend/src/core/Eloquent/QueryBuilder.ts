@@ -155,6 +155,14 @@ export class QueryBuilder<T extends Model> {
         return this;
     }
 
+    whereNotIn(column: string, values: any[]): this {
+        const qualifiedColumn = this.qualifyColumn(column);
+
+        this.qb.whereNotIn(qualifiedColumn, values);
+
+        return this;
+    }
+
     whereNull(column: string): this {
         const qualifiedColumn = this.qualifyColumn(column);
 

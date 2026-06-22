@@ -1,16 +1,35 @@
 import { RouteRecordRaw } from "vue-router";
 
 const routes: RouteRecordRaw[] = [
+    {   
+        path: "/areaCliente/login",
+        component: () => import("pages/LoginCliente.vue"),
+    },
+
+    {
+        path: "/areaCliente",
+        component: () => import("src/layouts/MainLayoutCliente.vue"),
+        meta: {
+            validaLoginCliente: true,
+        },
+        children: [
+            {   
+                path: "agendamentos",
+                component: () => import("pages/AgendamentoCliente.vue"),
+            },
+        ],
+    },
+
     {  
         path: "/login",
-        component: () => import("pages/Login.vue"),
+        component: () => import("pages/LoginUsuario.vue"),
     },
 
     {
         path: "/",
         component: () => import("src/layouts/MainLayout.vue"),
         meta: { 
-            requiresAuth: true,
+            validaLoginUsuario: true,
         },
         children: [
             {   
@@ -24,6 +43,10 @@ const routes: RouteRecordRaw[] = [
             {   
                 path: "servicos",
                 component: () => import("pages/Servicos.vue"),
+            },
+            {   
+                path: "indicadores",
+                component: () => import("pages/Indicadores.vue"),
             },
             {   
                 path: "usuarios",

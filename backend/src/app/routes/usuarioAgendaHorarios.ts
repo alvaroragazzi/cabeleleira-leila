@@ -15,4 +15,7 @@ router.get("/diasDisponiveisMes", UsuarioAgendaHorariosController.diasDisponivei
 router.get("/horariosDia", UsuarioAgendaHorariosController.horariosDia);
 router.get("/diasComHorariosMes", UsuarioAgendaHorariosController.diasComHorariosMes);
 
+router.get("/", UsuarioAgendaHorariosController.getAll);
+router.post("/", UsuarioAgendaHorariosController.create);
+
 export default router;

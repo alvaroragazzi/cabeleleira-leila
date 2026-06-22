@@ -22,6 +22,9 @@ type AuthContract = {
 declare module "express-serve-static-core" {
     interface Request {
         auth: AuthContract;
+        session: {
+            id_cliente?: string | number | null;
+        };
         models?: Record<string, unknown>;
         validate<T extends Record<string, string>>(rules: T): Promise<InferValidatedData<T>>;
     }

@@ -404,6 +404,10 @@ onMounted(() => {
             optionsByURL.value = data;
             optionsBackup = [...data];
 
+            if (data.length == 1 && !attrs.readonly && !attrs.disable && !attrs.modelValue) {
+                emit("update:model-value", attrs["emit-value"] == "" ? data[0][props.optionValue] : data[0]);
+            }
+
             emit("loaded");
         });
     }
