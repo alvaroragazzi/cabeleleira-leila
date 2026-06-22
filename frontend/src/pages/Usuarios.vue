@@ -28,10 +28,7 @@
                     <q-img :src="props.row.imagem" />
                 </q-avatar>
 
-                <div class="column">
-                    <span>{{ props.row.nm_usuario }}</span>
-                    <q-rating readonly :model-value="4" size="1rem" :max="4" color="yellow-8" />
-                </div>
+                <span>{{ props.row.nm_usuario }}</span>
             </div>
         </template>
 

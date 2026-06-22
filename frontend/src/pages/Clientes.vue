@@ -14,7 +14,7 @@
         label="Novo cliente"
         color="primary"
         class="q-mb-sm"
-        @click="abrirModalServico()"
+        @click="abrirModalCliente()"
     />
 
     <g-table
@@ -24,7 +24,7 @@
     >
         <template #body-cell-Acoes="props">
             <div class="items-center row q-gutter-x-sm">
-                <g-btn dense color="primary" icon="Edit" label="Editar" @click="abrirModalServico(props.row.id)"/>
+                <g-btn dense color="primary" icon="Edit" label="Editar" @click="abrirModalCliente(props.row.id)"/>
             </div>
         </template>
     </g-table>
@@ -35,7 +35,7 @@ import { ref, onMounted } from "vue";
 import { useQuasar } from "quasar";
 import { api } from "boot/axios";
 
-import ModalServico from "components/Servicos/ModalServico.vue";
+import ModalCliente from "components/Clientes/ModalCliente.vue";
 
 const $q = useQuasar();
 
@@ -50,9 +50,9 @@ const columns = [
     { name: "Acoes", label: "Ações" },
 ];
 
-const abrirModalServico = (id) => {
+const abrirModalCliente = (id) => {
     $q.dialog({
-        component: ModalServico,
+        component: ModalCliente,
         componentProps: { 
             id,
         },

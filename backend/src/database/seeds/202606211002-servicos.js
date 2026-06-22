@@ -23,7 +23,7 @@ exports.seed = async function (knex) {
             nm_servico: "Unhas",
             vl_preco: 60,
             vl_duracao: 45,
-            ds_caminho_imagem: "servicos_imgs/unhas.jpeg",
+            ds_caminho_imagem: "servicos_imgs/unhas.jpg",
         },
     ]);
 };

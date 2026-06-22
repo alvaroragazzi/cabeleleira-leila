@@ -18,7 +18,7 @@
                         text-color="white"
                         label="Novo agendamento"
                         icon="ClockPlus"
-                        @click="abrirModalNovoAgendamento"
+                        @click="abrirModalAgendamento()"
                     />
                 </div>
             </q-card-section>
@@ -70,7 +70,7 @@
 
                             <div class="text-caption text-grey-7 q-mt-xs row items-center no-wrap">
                                 <g-icon name="Clock" size="14px" class="q-mr-xs" />
-                                {{ dayjs(agendamento.dh_agendamento).format("DD [de] MMMM [de] YYYY, HH:mm") }}
+                                {{ dayjs.utc(agendamento.dh_agendamento).format("DD [de] MMMM [de] YYYY, HH:mm") }}
                             </div>
                         </div>
 
@@ -83,15 +83,33 @@
                     </q-card-section>
 
                     <!-- só pode cancelar o agendamento se for no máximo 2 dias antes da data do agendamento -->
-                    <g-btn
-                        v-if="dayjs(agendamento.dh_agendamento).diff(dayjs(), 'days') >= 2"
-                        icon="X" 
-                        size="sm" 
-                        label="Cancelar agendamento" 
-                        dense 
-                        color="red-6" 
-                        class="q-mb-sm q-ml-sm"
-                    />
+                    <div
+                        v-if="dayjs(agendamento.dh_agendamento).diff(dayjs(), 'days') >= 2" 
+                        class="row items-center q-col-gutter-sm q-pa-md"
+                    >
+                        <div class="col-lg-6 col-12">
+                            <g-btn
+                                icon="X" 
+                                size="sm" 
+                                label="Cancelar agendamento" 
+                                dense 
+                                color="red-6"
+                                class="full-width"
+                            />
+                        </div>
+
+                        <div class="col-lg-6 col-12">
+                            <g-btn
+                                icon="X" 
+                                size="sm" 
+                                label="Alterar agendamento" 
+                                dense 
+                                color="primary" 
+                                class="full-width"
+                                @click="abrirModalAgendamento(agendamento)"
+                            />
+                        </div>
+                    </div>
 
                     <q-separator />
 
@@ -136,23 +154,16 @@
 import { api } from "boot/axios"
 import { onMounted, ref } from "vue"
 import { useQuasar } from "quasar"
-import { useRouter } from "vue-router";
 
 import ModalAgendamentoCliente from "components/AgendamentoCliente/ModalAgendamentoCliente.vue"
 
 import dayjs from "dayjs";
-import updateLocale from 'dayjs/plugin/updateLocale';
+import utc from "dayjs/plugin/utc";
+import "dayjs/locale/pt-br";
 
-dayjs.extend(updateLocale)
+dayjs.locale("pt-br");
+dayjs.extend(utc);
 
-dayjs.updateLocale('en', {
-  months: [
-    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho",
-    "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-  ]
-})
-
-const $router = useRouter();
 const $q = useQuasar();
 
 const agendamentos = ref([]);
@@ -169,9 +180,22 @@ const getAgendamentos = async () => {
     }
 }
 
-const abrirModalNovoAgendamento = () => {
+const abrirModalAgendamento = (agendamento) => {
+    let dadosAgendamento = {};
+
+    if (agendamento) {
+        dadosAgendamento = {
+            ...agendamento,
+            servicos: agendamento.agendamentoServicos.map(ag => ag.servico),
+            minutos_disponiveis: agendamento.minutos_disponiveis.minutos_disponiveis,
+        };
+    }
+
     $q.dialog({
         component: ModalAgendamentoCliente,
+        componentProps: {
+            agendamento: agendamento ? dadosAgendamento : null,
+        },
     }).onOk(() => getAgendamentos());
 }
 

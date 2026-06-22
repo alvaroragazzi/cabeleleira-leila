@@ -1,15 +1,8 @@
-type ServicoMaisSolicitado = {
-    id_servico: number;
-    nm_servico: string;
-    total_solicitado: number;
-    faturamento: number;
-};
-
 import type { Request, Response } from "express";
 
 import DB from "../../../core/Eloquent/DB";
 
-export default class ServicosController {
+export default class IndicadoresController {
     public static async getAll(req: Request, res: Response): Promise<any> {
         const resultado = await DB.connection().raw(`
             WITH parametros AS (
@@ -126,6 +119,57 @@ export default class ServicosController {
                         s.nm_servico ASC
                     LIMIT 5
                 ) dados
+            ),
+
+            agendamentos_por_dia_semana AS (
+                SELECT
+                    COALESCE(
+                        JSON_AGG(
+                            JSON_BUILD_OBJECT(
+                                'data', TO_CHAR(dados.data, 'YYYY-MM-DD'),
+                                'vl_dia_semana', dados.vl_dia_semana,
+                                'dia_semana', dados.dia_semana,
+                                'total_agendamentos', dados.total_agendamentos
+                            )
+                            ORDER BY dados.data
+                        ),
+                        '[]'::json
+                    ) AS dias
+                FROM (
+                    SELECT
+                        d.data::date AS data,
+                        EXTRACT(ISODOW FROM d.data)::int AS vl_dia_semana,
+
+                        CASE EXTRACT(ISODOW FROM d.data)::int
+                            WHEN 1 THEN 'Segunda-feira'
+                            WHEN 2 THEN 'Terça-feira'
+                            WHEN 3 THEN 'Quarta-feira'
+                            WHEN 4 THEN 'Quinta-feira'
+                            WHEN 5 THEN 'Sexta-feira'
+                            WHEN 6 THEN 'Sábado'
+                            WHEN 7 THEN 'Domingo'
+                        END AS dia_semana,
+
+                        COUNT(ab.id)::int AS total_agendamentos
+
+                    FROM parametros p
+
+                    CROSS JOIN LATERAL GENERATE_SERIES(
+                        p.inicio_semana_atual::date,
+                        (p.fim_semana_atual - INTERVAL '1 day')::date,
+                        INTERVAL '1 day'
+                    ) AS d(data)
+
+                    LEFT JOIN agendamentos_base ab
+                        ON ab.dh_agendamento >= d.data
+                    AND ab.dh_agendamento < d.data + INTERVAL '1 day'
+
+                    GROUP BY
+                        d.data
+
+                    ORDER BY
+                        d.data
+                ) dados
             )
 
             SELECT
@@ -165,10 +209,13 @@ export default class ServicosController {
 
                 r.quantidade_agendamentos_concluidos_semana_atual,
 
-                sms.servicos AS servicos_mais_solicitados
+                sms.servicos AS servicos_mais_solicitados,
+
+                apds.dias AS agendamentos_por_dia_semana
 
             FROM resumo r
             CROSS JOIN servicos_mais_solicitados sms
+            CROSS JOIN agendamentos_por_dia_semana apds
         `, [
             1
         ]);
@@ -188,7 +235,9 @@ export default class ServicosController {
 
             quantidade_agendamentos_concluidos_semana_atual: Number(row?.quantidade_agendamentos_concluidos_semana_atual ?? 0),
 
-            servicos_mais_solicitados: row?.servicos_mais_solicitados ?? []
+            servicos_mais_solicitados: row?.servicos_mais_solicitados ?? [],
+
+            agendamentos_por_dia_semana: row?.agendamentos_por_dia_semana ?? []
         });
     }
 }

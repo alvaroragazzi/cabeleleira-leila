@@ -7,15 +7,13 @@ import useMiddleware from "../helpers/useMiddleware";
 
 const router = express.Router();
 
-//router.use(useMiddleware(AuthMiddleware));
-
 router.get("/horariosDisponiveis", UsuarioAgendaHorariosController.horarioDisponiveis);
 router.get("/diasDisponiveisMes", UsuarioAgendaHorariosController.diasDisponiveisMes);
 
-router.get("/horariosDia", UsuarioAgendaHorariosController.horariosDia);
-router.get("/diasComHorariosMes", UsuarioAgendaHorariosController.diasComHorariosMes);
+router.get("/horariosDia", useMiddleware(AuthMiddleware), UsuarioAgendaHorariosController.horariosDia);
+router.get("/diasComHorariosMes", useMiddleware(AuthMiddleware), UsuarioAgendaHorariosController.diasComHorariosMes);
 
-router.get("/", UsuarioAgendaHorariosController.getAll);
-router.post("/", UsuarioAgendaHorariosController.create);
+router.get("/", useMiddleware(AuthMiddleware), UsuarioAgendaHorariosController.getAll);
+router.post("/", useMiddleware(AuthMiddleware), UsuarioAgendaHorariosController.create);
 
 export default router;

@@ -1,19 +1,19 @@
 <template>
     <div style="margin: 0 auto">
         <div>
-            <q-card flat bordered class="q-mb-md">
+            <g-card flat bordered class="q-mb-md">
                 <q-card-section>
                     <div class="row items-center justify-between q-col-gutter-md q-mb-md">
                         <div class="col-12">
-                            <div class="text-h6">
-                                <q-icon name="filter_list" size="22px" class="q-mr-xs" />
+                            <div class="text-h6 items-center row">
+                                <g-icon name="ListFilter" size="22px" class="q-mr-xs" />
                                 Filtros de Agendamento
                             </div>
                         </div>
                     </div>
 
-                    <div class="row no-wrap items-start" style="width: 100%;">
-                        <div class="column">
+                    <div class="row q-col-gutter-sm" style="width: 100%;">
+                        <div class="column col-lg-4 col-md-6 col-12">
                             <q-date
                                 v-model="dataSelecionada"
                                 @update:model-value="onDataSelecionadaChange"
@@ -21,19 +21,13 @@
                                 landscape 
                                 today-btn
                                 event-color="red"
+                                class="full-width full-height"
                                 :events="feriadosNacionais"
                                 :options="datasDisponiveis"
                             />
-
-                            <q-card-section class="row q-px-sm">
-                                <q-badge rounded color="red" class="q-mr-xs" />
-                                <div>Feriados nacionais</div>
-                            </q-card-section>
                         </div>
 
-                        <q-separator vertical class="q-mx-md" />
-
-                        <div class="col column">
+                        <div class="col-lg col-md-6 col-12 column">
                             <SelectUsuario 
                                 ref="selectUsuario"
                                 label="Usuário"
@@ -56,9 +50,9 @@
                         </div>
                     </div>
                 </q-card-section>
-            </q-card>
+            </g-card>
 
-            <q-card 
+            <g-card 
                 flat 
                 bordered
             >
@@ -97,7 +91,7 @@
                                 />
                             </div>
 
-                            <q-card class="timeline-card" :class="{ 'timeline-card--ocupado': !horario.ocupado, 'timeline-card--extra': horario.tf_extra, 'timeline-card--bloqueado': horario.tf_bloqueado }" bordered>
+                            <g-card class="timeline-card" :class="{ 'timeline-card--ocupado': !horario.ocupado, 'timeline-card--extra': horario.tf_extra, 'timeline-card--bloqueado': horario.tf_bloqueado }" bordered>
                                 <q-card-section>
                                     <div
                                         class="row items-stretch no-wrap q-col-gutter-md full-width"
@@ -109,6 +103,21 @@
                                             >
                                                 <div class="text-primary"><q-icon name="sym_o_person" size="19px" class="q-mr-xs" /> {{ horario.agendamento.nm_cliente }}</div>
                                             </div>
+
+                                            <q-badge v-if="horario.ocupado && horario.agendamento.tem_outro_agendamento_semana" color="yellow-8" text-color="white">
+                                                <div class="column text-caption">
+                                                    <div class="row items-center q-gutter-x-xs">
+                                                        <g-icon name="TriangleAlert" size="14px" class="q-mr-xs" />
+                                                        Este cliente tem outro(s) agendamento nesta semana
+                                                    </div>
+
+                                                    <ul>
+                                                        <li v-for="outroAgendamento in horario.agendamento.outros_agendamentos_semana" :key="outroAgendamento.id" class="text-xs text-white">
+                                                            {{ dayjs(outroAgendamento.dh_agendamento).format("DD/MM/YYYY [às] HH:mm") }}
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </q-badge>
 
                                             <div 
                                                 v-if="horario.ocupado"
@@ -187,7 +196,9 @@
                                             </div>
                                         </div>
                                         
-                                        <div class="botoes-btn-slot column items-center q-gutter-y-xs">
+                                        <div 
+                                            class="botoes-btn-slot column items-center q-gutter-y-xs"
+                                        >
                                             <g-btn
                                                 v-if="!horario.ocupado && dayjs(horario.dh_horario).isAfter(dayjs())"
                                                 class="botoes-btn col full-width"
@@ -202,26 +213,38 @@
 
                                             <g-btn
                                                 v-if="horario.ocupado && !horario.agendamento.tf_confirmado"
-                                                class="botoes-btn col full-width"
+                                                class="col full-width"
                                                 color="teal-4"
                                                 label="Confirmar"
                                                 no-caps
                                                 unelevated
                                                 dense
                                                 icon="Check"
-                                                @click="confirmarAgendamento(horario.agendamento.id)"
+                                                @click="confirmarDesconfirmarAgendamento(horario.agendamento.id, true)"
                                             />
 
                                             <g-btn
-                                                v-if="horario.ocupado && horario.tf_confirmado"
+                                                v-if="horario.ocupado"
+                                                class="botoes-btn col full-width"
+                                                color="info"
+                                                label="Editar"
+                                                no-caps
+                                                unelevated
+                                                dense
+                                                icon="Edit"
+                                                @click="abrirModalAgendamentoCliente(horario)"
+                                            />
+
+                                            <g-btn
+                                                v-if="horario.ocupado && horario.agendamento.tf_confirmado"
                                                 class="botoes-btn col full-width"
                                                 color="red-11"
                                                 label="Desconfirmar"
                                                 no-caps
                                                 unelevated
                                                 dense
-                                                icon="Check"
-                                                @click="confirmarDesconfirmarAgendamento(horario, false)"
+                                                icon="CalendarX"
+                                                @click="confirmarDesconfirmarAgendamento(horario.agendamento.id, false)"
                                             />
 
                                             <g-btn
@@ -238,17 +261,17 @@
                                         </div>
                                     </div>
                                 </q-card-section>
-                            </q-card>
+                            </g-card>
                         </div>
                     </div>
                 </q-card-section>
-            </q-card>
+            </g-card>
         </div>
     </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, toRaw  } from "vue";
 import dayjs from "dayjs";
 import { useQuasar } from "quasar";
 import { api } from "boot/axios";
@@ -256,6 +279,7 @@ import { api } from "boot/axios";
 import SelectUsuario from "components/Selects/SelectUsuario.vue";
 import ModalAgendamento from "components/Agendas/ModalAgendamento.vue";
 import ModalHorarioTrabalho from "components/Agendas/ModalHorarioTrabalho.vue";
+import ModalAgendamentoCliente from "components/AgendamentoCliente/ModalAgendamentoCliente.vue";
 
 const $q = useQuasar();
 
@@ -282,7 +306,7 @@ const onDataSelecionadaChange = (novaData) => {
 };
 
 const getDiasDisponiveis = () => {
-    api.get("/usuarioAgendaHorarios/diasComHorariosMes", {
+    return api.get("/usuarioAgendaHorarios/diasComHorariosMes", {
         params: {
             id_usuario: usuarioSelecionado.value,
             data: `${mesAnoSelecionado.value}-01`,
@@ -328,20 +352,45 @@ const abrirModalAgendamento = (horario) => {
     }).onOk(() => getHorariosDisponiveis());
 };
 
-const confirmarAgendamento = (id_agendamento) => {
+const abrirModalAgendamentoCliente = (horario) => {
+    let dadosAgendamento = null;
+
+    if (horario) {
+        dadosAgendamento = structuredClone(toRaw(horario.agendamento));
+
+        dadosAgendamento.servicos = (dadosAgendamento.servicos || []).map((servico) => {
+            return {
+                ...servico,
+                id: servico.id ?? servico.id_servico,
+                id_servico: servico.id_servico ?? servico.id
+            };
+        });
+
+        dadosAgendamento.minutos_disponiveis = horario.minutos_disponiveis;
+    }
+
     $q.dialog({
-        title: "Confirmar agendamento",
-        message: "Deseja realmente confirmar este agendamento?",
+        component: ModalAgendamentoCliente,
+        componentProps: {
+            agendamento: dadosAgendamento,
+        },
+    }).onOk(() => getHorariosDisponiveis());
+};
+
+const confirmarDesconfirmarAgendamento = (id_agendamento, tf_confirmado) => {
+    $q.dialog({
+        title: `${tf_confirmado ? "Confirmar" : "Desconfirmar"} agendamento`,
+        message: `Deseja realmente ${tf_confirmado ? "confirmar" : "desconfirmar"} este agendamento?`,
         cancel: true,
         persistent: true,
     }).onOk(() => {
         $q.loading.show();
 
-        api.put(`/agendamentos/${id_agendamento}`, { tf_confirmado: true })
+        api.put(`/agendamentos/${id_agendamento}`, { tf_confirmado: tf_confirmado })
             .then(() => {
                 $q.notify({
                     type: "positive",
-                    message: "Agendamento confirmado com sucesso!",
+                    message: `${tf_confirmado ? "Agendamento confirmado" : "Agendamento desconfirmado"} com sucesso!`,
                 });
 
                 getHorariosDisponiveis();
@@ -372,27 +421,7 @@ const cancelarAgendamento = (id_agendamento) => {
     });
 }
 
-const carregarFeriadosNacionais = async (ano) => {
-    if (!ano || anoFeriadosCarregado.value === ano) {
-        return;
-    }
-
-    try {
-        const res = await api.get(`https://brasilapi.com.br/api/feriados/v1/${ano}`);
-
-        feriadosNacionais.value = (res.data || [])
-            .map((feriado) => moment(feriado.date, "YYYY-MM-DD", true))
-            .filter((data) => data.isValid())
-            .map((data) => data.format("YYYY/MM/DD"));
-
-        anoFeriadosCarregado.value = ano;
-    } catch (error) {
-        feriadosNacionais.value = [];
-        console.error("Erro ao carregar feriados nacionais:", error);
-    }
-};
-
-onMounted(() => getDiasDisponiveis());
+onMounted(() => getDiasDisponiveis().then(() => getHorariosDisponiveis()));
 </script>
 
 <style scoped>

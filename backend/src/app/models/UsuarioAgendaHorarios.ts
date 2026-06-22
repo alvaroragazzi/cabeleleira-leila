@@ -53,10 +53,19 @@ export default class UsuarioAgendaHorarios extends Model {
         data: string
     ): Promise<HorarioDia[]> {
         const resultado = await this.getConnection().raw(`
-            WITH agendamentos_ocupados AS (
+            WITH parametros AS (
+                SELECT
+                    ?::int AS id_usuario,
+                    ?::date AS data_referencia,
+                    DATE_TRUNC('week', ?::date)::timestamp AS inicio_semana,
+                    (DATE_TRUNC('week', ?::date) + INTERVAL '1 week')::timestamp AS fim_semana
+            ),
+
+            agendamentos_semana AS (
                 SELECT
                     a.id,
                     a.id_usuario,
+                    a.id_cliente,
                     c.nm_cliente,
                     c.ds_telefone,
                     a.tf_confirmado,
@@ -74,17 +83,30 @@ export default class UsuarioAgendaHorarios extends Model {
                         )
                     ) FILTER (WHERE s.id IS NOT NULL) AS servicos
                 FROM agendamentos a
-                INNER JOIN clientes c ON c.id = a.id_cliente
-                LEFT JOIN agendamento_servicos ags ON ags.id_agendamento = a.id
-                LEFT JOIN servicos s ON s.id = ags.id_servico
-                WHERE a.id_usuario = ?
-                      AND a.dh_agendamento::date = ?::date
+                INNER JOIN clientes c 
+                    ON c.id = a.id_cliente
+                LEFT JOIN agendamento_servicos ags 
+                    ON ags.id_agendamento = a.id
+                LEFT JOIN servicos s 
+                    ON s.id = ags.id_servico
+                CROSS JOIN parametros p
+                WHERE a.id_usuario = p.id_usuario
+                AND a.dh_agendamento >= p.inicio_semana
+                AND a.dh_agendamento < p.fim_semana
                 GROUP BY 
-                    a.id, 
-                    a.id_usuario, 
+                    a.id,
+                    a.id_usuario,
+                    a.id_cliente,
                     c.nm_cliente,
                     c.ds_telefone,
                     a.dh_agendamento
+            ),
+
+            agendamentos_ocupados AS (
+                SELECT ag.*
+                FROM agendamentos_semana ag
+                CROSS JOIN parametros p
+                WHERE ag.inicio::date = p.data_referencia
             ),
 
             menor_servico AS (
@@ -97,15 +119,16 @@ export default class UsuarioAgendaHorarios extends Model {
             horarios AS (
                 SELECT DISTINCT
                     gs.horario AS horario_real,
-                    (?::date + uah.hr_fim) AS fim_bloco
+                    (p.data_referencia + uah.hr_fim) AS fim_bloco
                 FROM usuario_agenda_horarios uah
+                CROSS JOIN parametros p
                 CROSS JOIN LATERAL generate_series(
-                    (?::date + uah.hr_inicio),
-                    (?::date + uah.hr_fim - INTERVAL '15 minutes'),
+                    (p.data_referencia + uah.hr_inicio),
+                    (p.data_referencia + uah.hr_fim - INTERVAL '15 minutes'),
                     INTERVAL '15 minutes'
                 ) AS gs(horario)
-                WHERE uah.id_usuario = ?
-                AND uah.vl_dia_semana = EXTRACT(ISODOW FROM ?::date)::int
+                WHERE uah.id_usuario = p.id_usuario
+                AND uah.vl_dia_semana = EXTRACT(ISODOW FROM p.data_referencia)::int
             ),
 
             base AS (
@@ -117,6 +140,7 @@ export default class UsuarioAgendaHorarios extends Model {
 
                     agendamento_atual.id AS agendamento_id,
                     agendamento_atual.id_usuario AS agendamento_id_usuario,
+                    agendamento_atual.id_cliente AS agendamento_id_cliente,
                     agendamento_atual.nm_cliente AS agendamento_nm_cliente,
                     agendamento_atual.ds_telefone AS agendamento_ds_telefone,
                     agendamento_atual.tf_confirmado AS agendamento_tf_confirmado,
@@ -127,6 +151,7 @@ export default class UsuarioAgendaHorarios extends Model {
 
                     proximo_agendamento.id AS proximo_agendamento_id,
                     proximo_agendamento.id_usuario AS proximo_agendamento_id_usuario,
+                    proximo_agendamento.id_cliente AS proximo_agendamento_id_cliente,
                     proximo_agendamento.nm_cliente AS proximo_nm_cliente,
                     proximo_agendamento.ds_telefone AS proximo_ds_telefone,
                     proximo_agendamento.tf_confirmado AS proximo_tf_confirmado,
@@ -200,14 +225,46 @@ export default class UsuarioAgendaHorarios extends Model {
                     WHEN agendamento_id IS NOT NULL THEN JSON_BUILD_OBJECT(
                         'id', agendamento_id,
                         'id_usuario', agendamento_id_usuario,
+                        'id_cliente', agendamento_id_cliente,
                         'nm_cliente', agendamento_nm_cliente,
                         'ds_telefone', agendamento_ds_telefone,
                         'tf_confirmado', agendamento_tf_confirmado,
                         'dh_agendamento', TO_CHAR(agendamento_inicio, 'YYYY-MM-DD HH24:MI:SS'),
+                        'data_agendamento', TO_CHAR(agendamento_inicio, 'DD/MM/YYYY'),
                         'hr_inicio', TO_CHAR(agendamento_inicio, 'HH24:MI'),
                         'hr_fim', TO_CHAR(agendamento_fim, 'HH24:MI'),
                         'duracao_total', agendamento_duracao_total,
-                        'servicos', agendamento_servicos
+                        'servicos', agendamento_servicos,
+
+                        'tem_outro_agendamento_semana', EXISTS (
+                            SELECT 1
+                            FROM agendamentos_semana outro
+                            WHERE outro.id_cliente = agendamento_id_cliente
+                            AND outro.id <> agendamento_id
+                        ),
+
+                        'outros_agendamentos_semana', COALESCE((
+                            SELECT JSON_AGG(
+                                JSON_BUILD_OBJECT(
+                                    'id', outro.id,
+                                    'id_usuario', outro.id_usuario,
+                                    'id_cliente', outro.id_cliente,
+                                    'nm_cliente', outro.nm_cliente,
+                                    'ds_telefone', outro.ds_telefone,
+                                    'tf_confirmado', outro.tf_confirmado,
+                                    'dh_agendamento', TO_CHAR(outro.inicio, 'YYYY-MM-DD HH24:MI:SS'),
+                                    'data_agendamento', TO_CHAR(outro.inicio, 'DD/MM/YYYY'),
+                                    'hr_inicio', TO_CHAR(outro.inicio, 'HH24:MI'),
+                                    'hr_fim', TO_CHAR(outro.fim, 'HH24:MI'),
+                                    'duracao_total', outro.duracao_total,
+                                    'servicos', outro.servicos
+                                )
+                                ORDER BY outro.inicio
+                            )
+                            FROM agendamentos_semana outro
+                            WHERE outro.id_cliente = agendamento_id_cliente
+                            AND outro.id <> agendamento_id
+                        ), '[]'::json)
                     )
 
                     WHEN agendamento_id IS NULL
@@ -215,14 +272,46 @@ export default class UsuarioAgendaHorarios extends Model {
                         AND proximo_agendamento_id IS NOT NULL THEN JSON_BUILD_OBJECT(
                         'id', proximo_agendamento_id,
                         'id_usuario', proximo_agendamento_id_usuario,
+                        'id_cliente', proximo_agendamento_id_cliente,
                         'nm_cliente', proximo_nm_cliente,
                         'ds_telefone', proximo_ds_telefone,
                         'tf_confirmado', proximo_tf_confirmado,
                         'dh_agendamento', TO_CHAR(proximo_inicio, 'YYYY-MM-DD HH24:MI:SS'),
+                        'data_agendamento', TO_CHAR(proximo_inicio, 'DD/MM/YYYY'),
                         'hr_inicio', TO_CHAR(proximo_inicio, 'HH24:MI'),
                         'hr_fim', TO_CHAR(proximo_fim, 'HH24:MI'),
                         'duracao_total', proximo_duracao_total,
-                        'servicos', proximo_servicos
+                        'servicos', proximo_servicos,
+
+                        'tem_outro_agendamento_semana', EXISTS (
+                            SELECT 1
+                            FROM agendamentos_semana outro
+                            WHERE outro.id_cliente = proximo_agendamento_id_cliente
+                            AND outro.id <> proximo_agendamento_id
+                        ),
+
+                        'outros_agendamentos_semana', COALESCE((
+                            SELECT JSON_AGG(
+                                JSON_BUILD_OBJECT(
+                                    'id', outro.id,
+                                    'id_usuario', outro.id_usuario,
+                                    'id_cliente', outro.id_cliente,
+                                    'nm_cliente', outro.nm_cliente,
+                                    'ds_telefone', outro.ds_telefone,
+                                    'tf_confirmado', outro.tf_confirmado,
+                                    'dh_agendamento', TO_CHAR(outro.inicio, 'YYYY-MM-DD HH24:MI:SS'),
+                                    'data_agendamento', TO_CHAR(outro.inicio, 'DD/MM/YYYY'),
+                                    'hr_inicio', TO_CHAR(outro.inicio, 'HH24:MI'),
+                                    'hr_fim', TO_CHAR(outro.fim, 'HH24:MI'),
+                                    'duracao_total', outro.duracao_total,
+                                    'servicos', outro.servicos
+                                )
+                                ORDER BY outro.inicio
+                            )
+                            FROM agendamentos_semana outro
+                            WHERE outro.id_cliente = proximo_agendamento_id_cliente
+                            AND outro.id <> proximo_agendamento_id
+                        ), '[]'::json)
                     )
 
                     ELSE NULL
@@ -233,11 +322,7 @@ export default class UsuarioAgendaHorarios extends Model {
         `, [
             idUsuario,
             data,
-
             data,
-            data,
-            data,
-            idUsuario,
             data
         ]);
 

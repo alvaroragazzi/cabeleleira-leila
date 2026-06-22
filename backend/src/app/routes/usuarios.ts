@@ -9,11 +9,9 @@ import useMulter from "../helpers/useMulter";
 
 const router = express.Router();
 
-//router.use(useMiddleware(AuthMiddleware));
-
-router.get("/:id", UsuariosController.get);
-router.get("/", UsuariosController.getAll);
-router.put("/:id", useMulter.single("imagem"), UsuariosController.update);
-router.post("/", useMulter.single("imagem"), UsuariosController.create);
+router.get("/:id", useMiddleware(AuthMiddleware), UsuariosController.get);
+router.get("/",  UsuariosController.getAll);
+router.put("/:id", useMiddleware(AuthMiddleware), useMulter.single("imagem"), UsuariosController.update);
+router.post("/", useMiddleware(AuthMiddleware), useMulter.single("imagem"), UsuariosController.create);
 
 export default router;

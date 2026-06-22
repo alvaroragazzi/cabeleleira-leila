@@ -6,7 +6,6 @@ exports.up = function (knex) {
         table.increments("id").primary();
         table.integer("id_usuario").unsigned().notNullable().references("id").inTable("usuarios");
         table.integer("id_cliente").unsigned().notNullable().references("id").inTable("clientes");
-        table.integer("vl_nota").unsigned().nullable();
         table.boolean("tf_confirmado").notNullable().defaultTo(false);
         table.datetime("dh_agendamento", { useTz: false }).notNullable();
     });

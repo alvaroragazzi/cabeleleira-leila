@@ -108,12 +108,49 @@ export default class AgendamentosController {
 
     public static async update(req: Request, res: Response): Promise<any> {
         const dados = await req.validate({
+            id_usuario: "nullable|integer",
+            dh_agendamento: "nullable|date",
+            id_servicos: "nullable|array",
+                "id_servicos.*": "integer",
             tf_confirmado: "nullable|boolean",
         });
 
         const agendamento = await Agendamentos.findOrFail(req.params.id);
         
-        await agendamento.update(dados);
+        await DB.connection().transaction(async (trx) => {
+            if (dados.id_servicos || dados.dh_agendamento || dados.id_usuario) {
+                await AgendamentoServicos.query(trx)
+                    .where("id_agendamento", "=", agendamento.getAttribute("id"))
+                    .whereNotIn("id_servico", dados.id_servicos as unknown as number[])
+                    .delete();
+
+                for (const id_servico of dados.id_servicos) {
+                    const servicoExistente = await AgendamentoServicos.query(trx)
+                        .where("id_agendamento", "=", agendamento.getAttribute("id"))
+                        .where("id_servico", "=", id_servico)
+                        .first();
+
+                    if (servicoExistente) {
+                        continue;
+                    }
+
+                    const servico = await Servicos.findOrFail(id_servico, trx);
+
+                    await AgendamentoServicos.create({
+                        id_agendamento: agendamento.getAttribute("id"),
+                        id_servico,
+                        nm_servico: servico.getAttribute("nm_servico"),
+                        vl_preco: servico.getAttribute("vl_preco"),
+                    }, trx);
+                }
+            }
+
+            agendamento.update({
+                dh_agendamento: dados.dh_agendamento,
+                tf_confirmado: dados.tf_confirmado,
+                id_usuario: dados.id_usuario,
+            });
+        });
 
         return res.send();
     }
@@ -132,6 +169,15 @@ export default class AgendamentosController {
             .with("agendamentoServicos.servico", "usuario")
             .orderBy("dh_agendamento", "desc")
             .get();
+
+        for(const agendamento of agendamentos) {
+            const minutosDisponiveis = await Agendamentos.minutosDisponiveisParaEdicao(
+                agendamento.getAttribute("id"),
+                agendamento.getAttribute("id_cliente"),
+            );
+
+            agendamento.setAttribute("minutos_disponiveis", minutosDisponiveis);
+        }
             
         return res.send(agendamentos);
     }

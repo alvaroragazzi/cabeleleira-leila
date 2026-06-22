@@ -174,6 +174,10 @@ const dados = ref({
 const emit = defineEmits(["ok"]);
 
 const props = defineProps({
+    agendamento: {
+        type: Object,
+        required: false,
+    },
     horario: {
         type: Object,
         required: true,
@@ -185,7 +189,7 @@ const props = defineProps({
 });
 
 const onSelecionarServico = (servico) => {
-    const idx = servicosSelecionados.value.findIndex(s => s.id === servico.id);
+    const idx = servicosSelecionados.value.findIndex(s => s.id == servico.id);
 
     if (idx > -1) {
         servicosSelecionados.value.splice(idx, 1);

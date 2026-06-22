@@ -1,7 +1,7 @@
 <template>
     <q-dialog ref="dialogRef">
         <g-card
-            title="Novo agendamento"
+            :title="props.agendamento ? 'Editar agendamento' : 'Novo agendamento'"
             class="full-width modal-agendamento-cliente"
             @submit="criarAgendamento"
             use-form
@@ -225,7 +225,10 @@ import { api } from "boot/axios";
 import { useQuasar } from "quasar";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
+import utc from "dayjs/plugin/utc";
+import "dayjs/locale/pt-br";
 
+dayjs.extend(utc);
 dayjs.locale("pt-br");
 
 import SelectUsuario from "components/Selects/SelectUsuario.vue";
@@ -251,6 +254,13 @@ const $q = useQuasar();
 const dialogRef = ref();
 const emit = defineEmits(["ok"]);
 
+const props = defineProps({
+    agendamento: {
+        type: Object,
+        required: false,
+    },
+});
+
 const servicoPodeSerSelecionadoDesselecionado = (servico) => {
     const duracaoTotal = totalDuracaoSelecionada.value + servico.vl_duracao;
 
@@ -258,12 +268,16 @@ const servicoPodeSerSelecionadoDesselecionado = (servico) => {
 }
 
 const getDiasDisponiveis = () => {
-    api.get("/usuarioAgendaHorarios/diasDisponiveisMes", {
+    return api.get("/usuarioAgendaHorarios/diasDisponiveisMes", {
         params: {
             id_usuario: funcionarioSelecionado.value,
             data: `${mesAnoSelecionado.value}-01`,
         },
     }).then(res => {
+        if (props.agendamento) {
+            dataSelecionada.value = dayjs(props.agendamento.dh_agendamento).format("YYYY/MM/DD");
+        }
+
         datasDisponiveis.value = res.data.map(dia => dayjs(dia.data, "YYYY-MM-DD").format("YYYY/MM/DD"));
     });
 }
@@ -276,6 +290,22 @@ const getHorariosDisponiveis = () => {
         },
     }).then(res => {
         horariosDisponiveis.value = res.data || [];
+
+        if (props.agendamento) {
+            const horario = {
+                dh_agendamento: dayjs.utc(props.agendamento.dh_agendamento).format("YYYY-MM-DD HH:mm"),
+                horario: dayjs.utc(props.agendamento.dh_agendamento).format("HH:mm"),
+                minutos_disponiveis: props.agendamento.minutos_disponiveis,
+            }
+
+            horariosDisponiveis.value.push(horario);
+
+            horariosDisponiveis.value.sort((a, b) => {
+                return a.dh_agendamento.localeCompare(b.dh_agendamento);
+            });
+
+            horarioSelecionado.value = horario;
+        }
     });
 };
 
@@ -319,35 +349,66 @@ const getServicos = () => {
 const criarAgendamento = () => {
     $q.loading.show();
 
-    api.post("/agendamentos/agendamentoCliente", {
-        id_usuario: funcionarioSelecionado.value,
-        dh_agendamento: horarioSelecionado.value.dh_agendamento,
-        id_servicos: servicosSelecionados.value.map(s => s.id),
-    }).then(() => {
-        $q.dialog({
-            title: "Agendamento criado",
-            message: "Seu agendamento foi criado com sucesso!",
-            icon: "sym_o_check_circle",
-            color: "green",
-        });
-        emit("ok");
-        dialogRef.value.hide();
-    }).catch(err => {
-        if (err.response.status == 400) {
+    if (!props.agendamento) {
+        api.post("/agendamentos/agendamentoCliente", {
+            id_usuario: funcionarioSelecionado.value,
+            dh_agendamento: horarioSelecionado.value.dh_agendamento,
+            id_servicos: servicosSelecionados.value.map(s => s.id),
+        }).then(() => {
             $q.dialog({
-                title: "Erro ao criar agendamento",
-                message: "O horário selecionado não está mais disponível. Por favor, escolha outro horário ou data.",
-                type: "negative",
+                title: "Agendamento criado",
+                message: "Seu agendamento foi criado com sucesso!",
+                icon: "sym_o_check_circle",
+                color: "green",
             });
-        }
-    })
-    .finally(() => $q.loading.hide());
+            emit("ok");
+            dialogRef.value.hide();
+        }).catch(err => {
+            if (err.response.status == 400) {
+                $q.dialog({
+                    title: "Erro ao criar agendamento",
+                    message: "O horário selecionado não está mais disponível. Por favor, escolha outro horário ou data.",
+                    type: "negative",
+                });
+            }
+        })
+        .finally(() => $q.loading.hide());
+    } else {
+        api.put(`/agendamentos/${props.agendamento.id}`, {
+            id_usuario: funcionarioSelecionado.value,
+            dh_agendamento: horarioSelecionado.value.dh_agendamento,
+            id_servicos: servicosSelecionados.value.map(s => s.id),
+        }).then(() => {
+            $q.dialog({
+                title: "Agendamento atualizado",
+                message: "Seu agendamento foi atualizado com sucesso!",
+                icon: "sym_o_check_circle",
+                color: "primary",
+            });
+            emit("ok");
+            dialogRef.value.hide();
+        }).catch(err => {
+            if (err.response.status == 400) {
+                $q.dialog({
+                    title: "Erro ao atualizar agendamento",
+                    message: "O horário selecionado não está mais disponível. Por favor, escolha outro horário ou data.",
+                    type: "negative",
+                });
+            }
+        })
+        .finally(() => $q.loading.hide());
+    }
 };
 
 onMounted(() => {
-    getDiasDisponiveis();
-    getHorariosDisponiveis();
+    if (props.agendamento) {
+        funcionarioSelecionado.value = props.agendamento.id_usuario;
+        servicosSelecionados.value = props.agendamento.servicos || [];
 
+        console.log(props.agendamento.servicos)
+    }
+
+    getDiasDisponiveis().then(() => getHorariosDisponiveis());
     getServicos();
 });
 </script>

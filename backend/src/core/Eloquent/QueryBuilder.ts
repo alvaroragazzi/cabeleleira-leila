@@ -280,6 +280,12 @@ export class QueryBuilder<T extends Model> {
         return models;
     }
 
+    async avg(column: string): Promise<number> {
+        const result = await this.qb.clone().avg<{ average: string | number }>({ average: column });
+        
+        return Number(result[0]?.average ?? 0);
+    }
+
     async update(values: PlainObject): Promise<number> {
         const payload = this.modelClass.prepareAttributesForDatabase(values);
         return this.qb.clone().update(payload);

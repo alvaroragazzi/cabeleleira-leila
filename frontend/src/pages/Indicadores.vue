@@ -43,7 +43,13 @@
                         <div class="text-subtitle2 text-weight-bold text-grey-7">Agendamentos</div>
                         <div class="text-h4 text-weight-bold q-mt-sm">{{ dados.quantidade_agendamentos_semana_atual }}</div>
 
-                        <div class="row items-center q-mt-md text-weight-medium" :class="1">
+                        <div 
+                            class="row items-center q-mt-md text-weight-medium"
+                            :class="{
+                                'text-positive': desempenhoAgendamentos > 0,
+                                'text-negative': desempenhoAgendamentos < 0,
+                            }"
+                        >
                             <g-icon name="Calendar" size="18px" class="q-mr-xs" />
                             {{ comparacaoAgendamentosSemanaPassada }}
                         </div>
@@ -58,9 +64,16 @@
                         <div class="text-subtitle2 text-weight-bold text-grey-7">Taxa de confirmação</div>
                         <div class="text-h4 text-weight-bold q-mt-sm">{{ dados.taxa_confirmacao }}%</div>
 
-                        <div class="row items-center q-mt-md text-weight-medium" :class="1">
-                            <g-icon name="TrendingUp" size="18px" class="q-mr-xs" />
-                            {{ comparacaoTaxaConfirmacaoSemanaPassada }}
+                        <div 
+                            class="row items-center q-mt-md text-weight-medium"
+                            :class="{
+                                'text-positive': dados.taxa_confirmacao > 70,
+                                'text-warning': dados.taxa_confirmacao > 50 && dados.taxa_confirmacao <= 70,
+                                'text-negative': dados.taxa_confirmacao < 50,
+                            }"
+                        >
+                            <g-icon :name="dados.taxa_confirmacao > 70 ? 'BadgeCheck' : dados.taxa_confirmacao < 50 ? 'BadgeAlert' : 'BadgeMinus'" size="18px" class="q-mr-xs" />
+                            {{ taxaConfirmacaoLabel }}
                         </div>
                     </q-card-section>
                 </g-card>
@@ -86,28 +99,25 @@
 
                         <div class="q-mt-lg q-gutter-md">
                             <div
-                                v-for="item in desempenhoSemana"
-                                :key="item.dia"
-                                class="performance-row"
+                                v-for="item in dados.agendamentos_por_dia_semana"
+                                :key="item.dia_semana"
                             >
                                 <div class="performance-row__label">
-                                    {{ item.dia }}
+                                    {{ item.dia_semana }}
                                 </div>
 
                                 <div class="performance-row__bar-wrap">
                                     <q-linear-progress
-                                        :value="item.value / maxDesempenho"
+                                        :value="item.total_agendamentos / maxDesempenho"
                                         rounded
                                         size="18px"
-                                        color="transparent"
                                         track-color="grey-3"
-                                        class="performance-bar"
-                                        :style="{ '--bar-width': `${(item.value / maxDesempenho) * 100}%` }"
+                                        :style="{ '--bar-width': `${(item.total_agendamentos / maxDesempenho) * 100}%` }"
                                     />
                                 </div>
 
                                 <div class="performance-row__value">
-                                    {{ item.value }}
+                                    {{ item.total_agendamentos }}
                                 </div>
                             </div>
                         </div>
@@ -191,14 +201,28 @@ const porcentagemCrescimento = computed(() => {
     return `${crescimento.toFixed(2)}% vs. semana passada`;
 });
 
+const desempenhoAgendamentos = computed(() => dados.value.quantidade_agendamentos_semana_atual - dados.value.quantidade_agendamentos_semana_passada);
+
 const comparacaoAgendamentosSemanaPassada = computed(() => {
     if (dados.value.quantidade_agendamentos_semana_passada == 0) {
         return "N/A";
     }
 
-    const qtd = dados.value.quantidade_agendamentos_semana_atual - dados.value.quantidade_agendamentos_semana_passada;
+    const qtd = desempenhoAgendamentos.value;
 
     return `${qtd > 0 ? '+' : ''}${qtd} vs. semana passada`;
+});
+
+const taxaConfirmacaoLabel = computed(() => {
+    const taxa = dados.value.taxa_confirmacao;
+
+    if (taxa > 70) {
+        return "Excelente";
+    } else if (taxa > 50) {
+        return "Boa";
+    }
+   
+    return "Ruim";
 });
 
 const resumoCards = [
@@ -218,43 +242,7 @@ const resumoCards = [
     },
 ]
 
-const desempenhoSemana = [
-    { dia: "Seg", value: 3 },
-    { dia: "Ter", value: 5 },
-    { dia: "Qua", value: 2 },
-    { dia: "Qui", value: 6 },
-    { dia: "Sex", value: 4 },
-    { dia: "Sáb", value: 7 },
-]
-
-const servicosMaisSolicitados = [
-    {
-        nome: "Escova",
-        solicitacoes: 12,
-        receita: "R$ 660",
-        icon: "content_cut",
-    },
-    {
-        nome: "Corte feminino",
-        solicitacoes: 9,
-        receita: "R$ 585",
-        icon: "face_retouching_natural",
-    },
-    {
-        nome: "Hidratação",
-        solicitacoes: 7,
-        receita: "R$ 630",
-        icon: "spa",
-    },
-    {
-        nome: "Coloração",
-        solicitacoes: 5,
-        receita: "R$ 900",
-        icon: "palette",
-    },
-]
-
-const maxDesempenho = computed(() => Math.max(...desempenhoSemana.map(item => item.value)));
+const maxDesempenho = computed(() => Math.max(...dados.value.agendamentos_por_dia_semana?.map(item => item.total_agendamentos)));
 
 onMounted(() => getIndicadores());
 </script>

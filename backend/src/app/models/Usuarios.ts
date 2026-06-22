@@ -1,5 +1,7 @@
 import { Model } from "../../core/Eloquent/Model";
 
+import Agendamentos from "./Agendamentos";
+
 import path from "path";
 import fs from "fs";
 
@@ -8,7 +10,7 @@ export default class Usuarios extends Model {
     static primaryKey = "id";
     static timestamps = false;
 
-    static appends = ["imagem"];
+    static appends = ["imagem", "avaliacao"];
     
     getImagemAttribute() {
         const caminho = this.getRawAttribute("ds_caminho_imagem");
