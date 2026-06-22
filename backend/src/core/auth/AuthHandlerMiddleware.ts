@@ -19,7 +19,7 @@ class AuthHandlerMiddleware extends BaseMiddleware {
         const requestAuth = new RequestAuth(this.req, this.res);
         this.req.auth = requestAuth;
         
-        this.next();
+        return this.next();
     }
 }
 
@@ -40,9 +40,6 @@ class RequestAuth {
             return null;
         }
 
-        console.log(token);
-        console.log(csrf);
-
         const decryptedToken = Crypt.decrypt(token);
 
         const session = await DB.connection().table("sessions").where("token_hash", "=", createHash("sha256").update(decryptedToken).digest("hex")).first();
@@ -58,21 +55,23 @@ class RequestAuth {
                     expires_at: newExpiresAt,
                 });
 
-                this.res.cookie("session", token, {
-                    httpOnly: true,
-                    sameSite: "lax",
-                    secure: process.env.NODE_ENV === "production",
-                    path: "/",
-                    expires: newExpiresAt,
-                });
+                if (!this.res.headersSent) {
+                    this.res.cookie("session", token, {
+                        httpOnly: true,
+                        sameSite: "lax",
+                        secure: process.env.NODE_ENV === "production",
+                        path: "/",
+                        expires: newExpiresAt,
+                    });
 
-                this.res.cookie("csrf", csrf, {
-                    httpOnly: false,
-                    sameSite: "lax",
-                    secure: process.env.NODE_ENV === "production",
-                    path: "/",
-                    expires: newExpiresAt,
-                });
+                    this.res.cookie("csrf", csrf, {
+                        httpOnly: false,
+                        sameSite: "lax",
+                        secure: process.env.NODE_ENV === "production",
+                        path: "/",
+                        expires: newExpiresAt,
+                    });
+                }
             }
 
             const authModel = await this.guard.model.findOrFail(session.identifier);

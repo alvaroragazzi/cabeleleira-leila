@@ -293,7 +293,6 @@ const datasDisponiveis = ref([]);
 const horariosDisponiveis = ref([]);
 
 const feriadosNacionais = ref([]);
-const anoFeriadosCarregado = ref(null);
 
 const usuarioSelecionado = ref(1);
 

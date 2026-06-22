@@ -95,12 +95,13 @@
                                 dense 
                                 color="red-6"
                                 class="full-width"
+                                @click="cancelarAgendamento(agendamento.id_agendamento)"
                             />
                         </div>
 
                         <div class="col-lg-6 col-12">
                             <g-btn
-                                icon="X" 
+                                icon="Edit" 
                                 size="sm" 
                                 label="Alterar agendamento" 
                                 dense 
@@ -197,6 +198,28 @@ const abrirModalAgendamento = (agendamento) => {
             agendamento: agendamento ? dadosAgendamento : null,
         },
     }).onOk(() => getAgendamentos());
+}
+
+const cancelarAgendamento = (id_agendamento) => {
+    $q.dialog({
+        title: "Cancelar agendamento",
+        message: "Deseja realmente cancelar este agendamento?",
+        cancel: true,
+        persistent: true,
+    }).onOk(() => {
+        $q.loading.show();
+
+        api.delete(`/agendamentos/${id_agendamento}`)
+            .then(() => {
+                $q.notify({
+                    type: "positive",
+                    message: "Agendamento cancelado com sucesso!",
+                });
+
+                getHorariosDisponiveis();
+            })
+            .finally(() => $q.loading.hide());
+    });
 }
 
 onMounted(() => getAgendamentos());
