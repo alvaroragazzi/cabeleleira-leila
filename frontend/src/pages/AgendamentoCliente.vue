@@ -95,7 +95,7 @@
                                 dense 
                                 color="red-6"
                                 class="full-width"
-                                @click="cancelarAgendamento(agendamento.id_agendamento)"
+                                @click="cancelarAgendamento(agendamento.id)"
                             />
                         </div>
 
